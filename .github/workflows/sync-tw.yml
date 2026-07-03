@@ -1,0 +1,77 @@
+name: Sync Taiwan Traditional Chinese
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 3 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Install OpenCC
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y opencc
+
+      - name: Download latest upstream strings
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$(gh api repos/yk47g/gitkraken-chinese/releases/latest --jq '.tag_name')"
+          version="${tag#v}"
+          mkdir -p dist upstream state
+          if ! gh release download "$tag" -R yk47g/gitkraken-chinese -p strings.json -D upstream; then
+            gh api "repos/yk47g/gitkraken-chinese/contents/strings_${version}.json?ref=master" --jq '.content' | base64 -d > upstream/strings.json
+          fi
+          printf '%s\n' "$tag" > upstream/tag.txt
+          printf '%s\n' "$version" > upstream/version.txt
+
+      - name: Convert and validate
+        run: |
+          set -euo pipefail
+          opencc -c s2twp.json -i upstream/strings.json -o dist/opencc.json
+          python3 scripts/apply_tw_glossary.py upstream/strings.json dist/opencc.json glossary/tw.json strings.json
+          python3 scripts/apply_tw_glossary.py --self-test
+          python3 -m json.tool strings.json >/dev/null
+          tag="$(cat upstream/tag.txt)"
+          printf '{\n  "repository": "yk47g/gitkraken-chinese",\n  "tag": "%s",\n  "file": "strings.json"\n}\n' "$tag" > state/upstream.json
+
+      - name: Commit and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(cat upstream/version.txt)"
+          release="tw-${version}"
+          changes="$(git status --porcelain -- strings.json state/upstream.json)"
+
+          if [[ -z "$changes" ]] && gh release view "$release" >/dev/null 2>&1; then
+            echo "Already synced $release"
+            exit 0
+          fi
+
+          if [[ -n "$changes" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add strings.json state/upstream.json
+            git commit -m "sync Taiwan Traditional Chinese for GitKraken ${version}"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+          if gh release view "$release" >/dev/null 2>&1; then
+            gh release upload "$release" strings.json#strings.json --clobber
+          else
+            gh release create "$release" strings.json#strings.json \
+              --target "$(git rev-parse HEAD)" \
+              --title "GitKraken ${version} Taiwan Traditional Chinese" \
+              --notes "Taiwan Traditional Chinese strings.json generated from yk47g/gitkraken-chinese ${version}."
+          fi
