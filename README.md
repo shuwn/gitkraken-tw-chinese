@@ -1,10 +1,28 @@
-# gitkraken-chinese
+# gitkraken-tw-chinese
 
-GitKraken的中文汉化补丁
+GitKraken 的台灣繁體中文化檔案與自動同步流程。
 
-[说明](#说明) | [更新](#更新) | [原理](#原理) | [操作步骤](#操作步骤) | [许可证](#许可证) | [意见征集](#意见征集)
+[用途](#用途) | [自動更新](#自動更新) | [操作步驟](#操作步骤) | [原專案說明](#原專案說明) | [许可证](#许可证)
 
-## 说明
+## 用途
+
+這個 fork 會把 [yk47g/gitkraken-chinese](https://github.com/yk47g/gitkraken-chinese) 的 GitKraken 簡體中文化檔案轉成台灣繁體中文，產出可直接替換 GitKraken 內建 `strings.json` 的檔案。
+
+適合想把 GitKraken Desktop 介面改成台灣繁體中文的使用者。下載本專案 Release 裡的 `strings.json` 後，依照下方步驟替換即可。
+
+## 自動更新
+
+本專案使用 GitHub Actions 每天檢查上游是否有新版：
+
+1. 下載上游最新 `strings.json`。
+2. 使用 OpenCC 轉成台灣繁體中文。
+3. 套用 [`glossary/tw.json`](./glossary/tw.json) 的台灣用語表。
+4. 檢查 JSON 結構與 placeholder 沒有被破壞。
+5. 更新本 repo 的 `strings.json`，並建立 `tw-x.y.z` Release。
+
+目前跳過 AI 翻譯；OpenCC 加用語表已足夠自動產出可用版本。用語不自然時，直接改 `glossary/tw.json` 最省事。
+
+## 原專案說明
 
 自从用上了 GitKraken 就爱上了，卸载了其他相关 Git 的 GUI，它的界面非常合我的胃口，但是苦于官方没有中文简体，于是便有了汉化的想法。
 
@@ -61,11 +79,12 @@ GitKraken的中文汉化补丁
 
 ### 方式一：自动替换（推荐）
 
-1. 前往 [Releases](https://github.com/yk47g/gitkraken-chinese/releases/latest) 页面，下载 `strings.json` 和对应你操作系统的
-   `GitKrakenPatcher` 自动替换脚本。
-2. 将 `strings.json` 和 `GitKrakenPatcher` 放在**同一目录**下。
-3. 运行 `GitKrakenPatcher`，脚本会自动查找 GitKraken 安装路径并完成替换。
-4. 重启 GitKraken 即可生效。
+1. 前往本專案 [Releases](https://github.com/shuwn/gitkraken-tw-chinese/releases/latest) 下載台灣繁體中文 `strings.json`。
+2. 前往上游 [Releases](https://github.com/yk47g/gitkraken-chinese/releases/latest) 下載對應你作業系統的
+   `GitKrakenPatcher` 自動替換腳本。
+3. 將 `strings.json` 和 `GitKrakenPatcher` 放在**同一目錄**下。
+4. 執行 `GitKrakenPatcher`，腳本會自動尋找 GitKraken 安裝路徑並完成替換。
+5. 重新啟動 GitKraken 即可生效。
 
 > 自动替换脚本无需安装任何运行环境，双击即可运行。目前仅在 Windows64
 > 上有测试，如有问题请于 [issues](https://github.com/yk47g/gitkraken-chinese/issues) 中反馈
