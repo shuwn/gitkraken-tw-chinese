@@ -1,4 +1,4 @@
-# gitkraken-tw-chinese
+# GitKraken 2026 正體中文 (台灣) 翻譯
 
 GitKraken 的台灣繁體中文化檔案與自動同步流程。
 
